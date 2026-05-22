@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <!-- Android 12+. Phase 1 — brak danych. -->
+    <cloud-backup />
+    <device-transfer />
+</data-extraction-rules>

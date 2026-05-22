@@ -1,0 +1,13 @@
+# Skopiuj ten plik jako `local.properties` (gitignored) i uzupełnij wartości.
+# Klucze API zdobywasz na:
+#   - Twelve Data: https://twelvedata.com/account/api-keys   (plan darmowy: 8 req/min, 800/dzień)
+#   - Gemini:      https://aistudio.google.com/apikey         (potrzebne dopiero w Fazie 5)
+
+# Ścieżka do Android SDK — Android Studio uzupełnia automatycznie.
+# Windows:  sdk.dir=C\:\\Users\\TwojUser\\AppData\\Local\\Android\\Sdk
+# macOS:    sdk.dir=/Users/twoj-user/Library/Android/sdk
+# Linux:    sdk.dir=/home/twoj-user/Android/Sdk
+sdk.dir=
+
+TWELVE_DATA_API_KEY=replace-me
+GEMINI_API_KEY=replace-me

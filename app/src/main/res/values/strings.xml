@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Stock Analysis Assistant</string>
+    <string name="welcome_title">Stock Analysis Assistant</string>
+    <string name="welcome_subtitle">Faza 1 — szkielet projektu gotowy.</string>
+</resources>

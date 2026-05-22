@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Theme.SAA jest bazowym motywem launchera. Compose stosuje własną instancję
+        MaterialTheme (presentation/theme/Theme.kt) — ten styl trzyma tylko bazowy
+        kolor okna i pasek statusu, żeby splash nie błyskał na biało/czarno.
+    -->
+    <style name="Theme.SAA" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/seed</item>
+        <item name="android:navigationBarColor">@color/background</item>
+    </style>
+</resources>
