@@ -37,7 +37,7 @@ class ChartScreenTest {
                 state = ChartUiState.Loading("AAPL", Range.ONE_MONTH, ChartType.CANDLE, false),
                 availableIndicators = available,
                 onBack = {}, onRefresh = {}, onToggleFavorite = {},
-                onRangeChange = {}, onTypeChange = {}, onToggleIndicator = {},
+                onRangeChange = {}, onTypeChange = {}, onToggleIndicator = {}, onAskAssistant = {},
             )
         }
         rule.onNodeWithText("AAPL").assertIsDisplayed()
@@ -57,7 +57,7 @@ class ChartScreenTest {
                 ),
                 availableIndicators = available,
                 onBack = {}, onRefresh = {}, onToggleFavorite = {},
-                onRangeChange = {}, onTypeChange = {}, onToggleIndicator = {},
+                onRangeChange = {}, onTypeChange = {}, onToggleIndicator = {}, onAskAssistant = {},
             )
         }
         rule.onNodeWithTag(ChartScreenTags.CHART).assertIsDisplayed()
@@ -70,7 +70,7 @@ class ChartScreenTest {
                 state = ChartUiState.Error("AAPL", Range.ONE_MONTH, ChartType.CANDLE, false, error = DataError.Network),
                 availableIndicators = available,
                 onBack = {}, onRefresh = {}, onToggleFavorite = {},
-                onRangeChange = {}, onTypeChange = {}, onToggleIndicator = {},
+                onRangeChange = {}, onTypeChange = {}, onToggleIndicator = {}, onAskAssistant = {},
             )
         }
         rule.onNodeWithTag(ChartScreenTags.ERROR).assertIsDisplayed()
@@ -84,7 +84,7 @@ class ChartScreenTest {
                 state = ChartUiState.Success("AAPL", Range.ONE_MONTH, ChartType.CANDLE, false, candles = listOf(candle(1))),
                 availableIndicators = available,
                 onBack = {}, onRefresh = {}, onToggleFavorite = { toggled++ },
-                onRangeChange = {}, onTypeChange = {}, onToggleIndicator = {},
+                onRangeChange = {}, onTypeChange = {}, onToggleIndicator = {}, onAskAssistant = {},
             )
         }
         rule.onNodeWithTag(ChartScreenTags.FAVORITE_BTN).performClick()
@@ -116,6 +116,7 @@ class ChartScreenTest {
                 onBack = {}, onRefresh = {}, onToggleFavorite = {},
                 onRangeChange = {}, onTypeChange = {},
                 onToggleIndicator = { toggled = it },
+                onAskAssistant = {},
             )
         }
         rule.onNodeWithTag(ChartScreenTags.INDICATORS_BTN).performClick()

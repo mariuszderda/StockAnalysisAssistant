@@ -38,9 +38,21 @@ object NetworkModule {
             .writeTimeout(HTTP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
 
         if (BuildConfig.DEBUG) {
-            builder.addInterceptor(
-                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY },
-            )
+            // CLAUDE.md hard rule § API keys — klucz nigdy w Logcat.
+            // Wlasny logger przepuszcza linie HTTP przez regex, ktory zamienia
+            // wartosci typowych parametrow query (key=..., apikey=...) na REDACTED.
+            val redactingLogger = HttpLoggingInterceptor.Logger { message ->
+                val redacted = message.replace(
+                    Regex("(?i)(\\b(?:key|apikey)=)[^&\\s\"]+"),
+                    "$1REDACTED",
+                )
+                android.util.Log.d("OkHttp", redacted)
+            }
+            val logger = HttpLoggingInterceptor(redactingLogger).apply {
+                level = HttpLoggingInterceptor.Level.BODY
+                redactHeader("Authorization")
+            }
+            builder.addInterceptor(logger)
         }
         return builder.build()
     }

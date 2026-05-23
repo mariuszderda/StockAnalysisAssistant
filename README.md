@@ -1,197 +1,190 @@
-# SAA — Claude Code prompt pack
+# Stock Analysis Assistant (SAA)
 
-Plan promptów dla Claude Code do projektu Stock Analysis Assistant (Android,
-projekt inżynierski).
+Aplikacja mobilna Android do analizy technicznej akcji giełdowych. Praca
+inżynierska, broniona w ~czerwcu 2026.
 
-## Co tu jest
+Użytkownik wpisuje ticker (`AAPL`, `MSFT`, `CDR.WA`), ogląda wykres
+świecowy/liniowy z konfigurowalnym zakresem (1M / 3M / 1R), włącza wskaźniki
+techniczne (RSI, MACD, SMA, EMA) implementowane od zera, a następnie pyta
+asystenta AI (Google Gemini) o interpretację po polsku. Asystent dostaje
+deterministyczny kontekst (ostatnie świece + bieżące wartości wskaźników) —
+nie zgaduje, nie udziela porad inwestycyjnych.
+
+## Architektura
 
 ```
-.
-├── CLAUDE.md                      # memory file — Claude Code czyta auto przy starcie
-├── .claude/
-│   └── commands/                  # slash-commands dla Claude Code
-│       ├── phase-1.md             # /phase-1  — bootstrap
-│       ├── phase-2.md             # /phase-2  — data layer
-│       ├── phase-3.md             # /phase-3  — UI screens
-│       ├── phase-4.md             # /phase-4  — wskaźniki (Strategy + Factory)
-│       ├── phase-5.md             # /phase-5  — Gemini + polish
-│       ├── check.md               # /check    — sanity check
-│       └── verify-deps.md         # /verify-deps — weryfikacja wersji
-└── docs/
-    └── phases/                    # pełne specyfikacje (czytane z dysku przez agenta)
-        ├── 01_bootstrap.md
-        ├── 02_data_layer.md
-        ├── 03_search_and_chart.md
-        ├── 04_indicators.md
-        └── 05_ai_chat_and_polish.md
+┌───────────────────────────────────────────────────────────────┐
+│                       presentation                            │
+│  Compose screens · ViewModels · UiState · navigation (Hilt)   │
+└───────────────────────────────────────────────────────────────┘
+            │  StateFlow                  ▲  domain interfaces
+            ▼                             │
+┌───────────────────────────────────────────────────────────────┐
+│                          domain                               │
+│  model/ · indicator/ (Strategy + Factory) · ai/ · repository/ │
+│                  brak zależności od Androida                  │
+└───────────────────────────────────────────────────────────────┘
+            ▲                             │
+            │  implements                 ▼
+┌───────────────────────────────────────────────────────────────┐
+│                           data                                │
+│  remote (Twelve Data) · local (Room) · repository · ai (REST) │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-## Jak zacząć
+**MVVM + Clean Architecture (3 warstwy).** `domain` zależy tylko od JVM
+(testy bez emulatora); `data` i `presentation` zależą od `domain`. Reguła
+sprawdzalna grepem — `domain/` nie importuje `androidx.`, `retrofit2.`,
+`com.squareup.moshi.`.
 
-### 1. Wrzuć całość do swojego repo
+## Wzorce projektowe (do obrony)
+
+Komisja oczekuje co najmniej dwóch świadomie zastosowanych wzorców. SAA
+ma trzy podstawowe + trzy „darmowe" (dziedzina, nie ozdoba):
+
+| Wzorzec       | Zastosowanie                         | ADR                                            |
+|---------------|--------------------------------------|------------------------------------------------|
+| **Repository** | dane (API + Room) za jednym interfejsem `StockRepository` w `domain.repository` | [ADR-001](docs/ADR/001-repository-pattern.md) |
+| **Strategy**   | algorytmy wskaźników: `IndicatorStrategy` + 4 implementacje (`RsiStrategy`, `MacdStrategy`, `SmaStrategy`, `EmaStrategy`) | [ADR-004](docs/ADR/004-strategy-factory.md) |
+| **Factory**    | mapowanie `IndicatorSpec` → `IndicatorStrategy` (`IndicatorFactory`, exhaustive `when` na sealed class) | [ADR-004](docs/ADR/004-strategy-factory.md) |
+| Observer (free)| `StateFlow<UiState>` w każdym ViewModelu, `collectAsStateWithLifecycle` w Compose | [ADR-003](docs/ADR/003-uistate-stateflow.md) |
+| Singleton (free)| `@Singleton` w Hilt (Repository, Factory, ApiKeys, Gemini stack)        | —                                              |
+| Adapter / Mapper (free)| DTO ↔ Entity ↔ Domain w `data/mapper/`                          | —                                              |
+
+## Tech stack
+
+- **Język:** Kotlin 2.1.x, JDK 17
+- **UI:** Jetpack Compose + Material 3
+- **DI:** Hilt 2.58
+- **Sieć:** Retrofit 3.0.0 + OkHttp 5.3.2 + Moshi 1.15.2 (codegen via KSP)
+- **Persistence:** Room 2.8.4 (cache OHLC 24h + ulubione)
+- **Wykresy:** Vico 2.1.2 (Compose-M3)
+- **Async:** Kotlin Coroutines + StateFlow
+- **Nawigacja:** Navigation Compose 2.9.8
+- **AI:** Google Gemini API (REST, `generativelanguage.googleapis.com`,
+  model `gemini-1.5-flash`). Decyzja: REST przez Retrofit, **nie** deprecated
+  SDK ani Firebase AI — [ADR-005](docs/ADR/005-gemini-integration.md).
+- **Dane rynkowe:** Twelve Data API (free tier — 8 req/min, 800 req/dzień)
+- **Testy:** JUnit 5 + Truth + MockK + Turbine + MockWebServer
+
+`minSdk = 26`, `targetSdk = 34`, `compileSdk = 36`.
+
+## Uruchomienie
+
+### 1. Klucze API
+
+Załóż konta i pobierz klucze:
+- Twelve Data: <https://twelvedata.com/account/api-keys>
+- Google AI Studio (Gemini): <https://aistudio.google.com/apikey>
+
+Stwórz `local.properties` w roocie projektu (gitignored — patrz
+`local.properties.example`):
+
+```properties
+sdk.dir=C:\\Users\\twoja-nazwa\\AppData\\Local\\Android\\Sdk
+TWELVE_DATA_API_KEY=tutaj_klucz
+GEMINI_API_KEY=tutaj_klucz
+```
+
+Bez klucza Gemini ekran czatu wyświetli komunikat „Brak klucza API Gemini".
+
+### 2. Build i instalacja
 
 ```bash
-# w pustym katalogu projektu (świeży git init)
-# skopiuj zawartość tego pakietu do roota:
-#   CLAUDE.md
-#   .claude/
-#   docs/
-
-git add CLAUDE.md .claude/ docs/
-git commit -m "Add Claude Code prompt pack"
+./gradlew assembleDebug
+./gradlew installDebug   # wymaga podłączonego urządzenia / emulatora API 26+
 ```
 
-### 2. Odpal Claude Code w katalogu projektu
+### 3. Testy
 
 ```bash
-cd /ścieżka/do/StockAnalysisAssistant
-claude
+./gradlew testDebugUnitTest        # JVM unit tests
+./gradlew connectedDebugAndroidTest # Compose UI + Room DAO (wymaga emulatora)
+./gradlew lint                     # Android Lint
 ```
 
-Przy starcie Claude Code automatycznie wczyta `CLAUDE.md` — zobaczysz to w
-banerze. Slash-komendy z `.claude/commands/` są dostępne natychmiast.
-
-### 3. Sprawdź że komendy są widoczne
-
-W Claude Code wpisz `/` i powinieneś zobaczyć:
-- `/phase-1` — Phase 1 — bootstrap...
-- `/phase-2` ...
-- `/check`
-- `/verify-deps`
-
-Jeśli nie widać — upewnij się że jesteś w roocie repo (Claude Code szuka
-`.claude/commands/` względem cwd) i że pliki mają rozszerzenie `.md`.
-
-## Workflow
-
-### Faza 1
+## Struktura pakietów
 
 ```
-> /phase-1
+pl.gwsh.stockanalysis/
+├── data/
+│   ├── remote/          # Retrofit (Twelve Data), DTO
+│   ├── local/           # Room: entities, DAO, database
+│   ├── repository/      # implementacja StockRepository (cache-first)
+│   ├── mapper/          # DTO ↔ Entity ↔ Domain
+│   └── ai/              # GeminiClientImpl (REST), GeminiApi, DTO
+├── domain/
+│   ├── model/           # Stock, Candle, Range, DataError
+│   ├── repository/      # StockRepository (interfejs)
+│   ├── indicator/       # IndicatorStrategy + 4 strategie + IndicatorFactory
+│   │   └── util/        # sma, ema, wilderSmooth (top-level fun)
+│   └── ai/              # GeminiClient, AnalysisContextBuilder, GeminiError
+├── presentation/
+│   ├── theme/
+│   ├── navigation/      # SaaNavHost, SaaDestinations, SaaBottomBar
+│   ├── common/          # ErrorText, LegalDisclaimerBanner, NumberFormatters
+│   └── screens/
+│       ├── search/      # SearchScreen + ViewModel + UiState
+│       ├── favorites/   # FavoritesScreen + ViewModel + UiState
+│       ├── chart/       # ChartScreen + ViewModel + UiState + VicoChart +
+│       │                # IndicatorPanel + OscillatorPanel + IndicatorLegend
+│       └── chat/        # ChatScreen + ViewModel + UiState + ChatMessage
+└── di/                  # NetworkModule, DatabaseModule, RepositoryModule,
+                         # CoroutineModule, AiModule, ApiKeys, kwalifikatory
 ```
 
-Claude Code:
-1. Wczyta `CLAUDE.md` + `docs/phases/01_bootstrap.md`
-2. Zweryfikuje aktualne wersje pakietów przez WebSearch (krytyczne — modele
-   halucynują wersje)
-3. Wejdzie w **plan mode** i przedstawi co stworzy
-4. Czeka na Twoje `approve`
-5. Tworzy pliki w kolejności + uruchamia `./gradlew help` co kilka kroków
-6. Wykonuje pełną weryfikację z checklisty
-7. Zatrzymuje się i czeka na review
+## ADR — Architecture Decision Records
 
-**Po fazie:**
-```
-> /check
-```
-Szybki sanity check (lint + test + grep konwencji).
+| Numer  | Tytuł                                                                       |
+|--------|-----------------------------------------------------------------------------|
+| [000](docs/ADR/000-uzycie-adr.md) | Po co nam ADR-y                                  |
+| [001](docs/ADR/001-repository-pattern.md) | Repository Pattern dla warstwy danych    |
+| [002](docs/ADR/002-twelve-data.md) | Wybór dostawcy danych rynkowych                 |
+| [003](docs/ADR/003-uistate-stateflow.md) | UiState (sealed) + StateFlow              |
+| [004](docs/ADR/004-strategy-factory.md) | **Strategy + Factory dla wskaźników**      |
+| [005](docs/ADR/005-gemini-integration.md) | **Gemini przez REST (Retrofit)**         |
 
-**Jeśli wszystko OK:**
-```bash
-git checkout -b feature/phase-1-bootstrap   # jeśli komenda nie zrobiła tego sama
-git add .
-git commit -m "Phase 1: bootstrap project skeleton"
-git tag phase-1-complete
-```
+## Ograniczenia (świadome)
 
-### Pozostałe fazy
+- **Twelve Data free tier:** 8 req/min, 800 req/dzień. Repository ma
+  cache-first z TTL 24h (ADR-001) — kolejne otwarcia tego samego tickera nie
+  jadą po sieci. Demo komisji powinno trzymać się 2-3 tickerów.
+- **Gemini free tier:** ~15 req/min (Google AI Studio). Demo: po jednym
+  pytaniu na ticker.
+- **Disclaimer „to nie jest porada inwestycyjna":** zawsze widoczny w
+  ChatScreen (`LegalDisclaimerBanner`, non-dismissable). Wymóg projektu
+  i CLAUDE.md § Gemini boundaries.
 
-Tak samo: `/phase-2`, `/phase-3`, `/phase-4`, `/phase-5`. Każda zaczyna się od
-plan mode, każda kończy commitem + tagiem.
+## Poza MVP (nie robione świadomie)
 
-**Reguła:** nie zaczynaj fazy N+1 dopóki faza N nie ma zielonego buildu
-i commita.
+- streaming odpowiedzi Gemini,
+- konta / logowanie,
+- powiadomienia push,
+- portfel / wycena pozycji,
+- backtesting,
+- tryb dark/light (Material 3 dynamic colors)
+- powiadomienia o alertach cenowych.
 
-## Klucze API
+## Workflow developerski
 
-Przed Fazą 2:
+Praca chunkami po fazach (5 łącznie):
 
-```bash
-# w roocie projektu:
-cat > local.properties <<EOF
-sdk.dir=/twoja/ścieżka/do/Android/Sdk
-TWELVE_DATA_API_KEY=...   # https://twelvedata.com/account/api-keys
-GEMINI_API_KEY=...         # https://aistudio.google.com/apikey (potrzebne dopiero w Fazie 5)
-EOF
-```
+| Faza   | Branch                                | Tag                              |
+|--------|---------------------------------------|----------------------------------|
+| 1      | `feature/phase-1-bootstrap`           | `phase-1-complete`               |
+| 2      | `feature/phase-2-data-layer`          | `phase-2-complete`               |
+| 3      | `feature/phase-3-search-chart`        | `phase-3-complete`               |
+| 4      | `feature/phase-4-indicators`          | `phase-4-complete`               |
+| 5      | `feature/phase-5-ai-and-polish`       | `phase-5-complete`, `v1.0.0-mvp` |
 
-`local.properties` jest w `.gitignore` — nigdy nie commituj.
+## Testy — pokrycie
 
-## Komendy pomocnicze
+- `domain/indicator/` — 43 testy (algorytmy + Factory + perf < 100 ms)
+- `domain/ai/AnalysisContextBuilder` — 8 testów
+- `data/ai/GeminiClientImpl` — 7 testów (MockWebServer)
+- `data/repository/StockRepositoryImpl` — 11 testów (MockK + MockWebServer)
+- `data/mapper/` — 8 testów
+- `presentation/screens/*/ViewModel` — 22 testy
+- `presentation/common/NumberFormatters` — 6 testów
 
-### `/check`
-Szybki status projektu: build, testy, lint, grep konwencji. Nie modyfikuje plików.
-
-### `/verify-deps`
-Sprawdza każdą wersję w `libs.versions.toml` przeciw Maven Central.
-Łapie halucynacje (RC, alpha, nieistniejące wersje).
-
-Uruchamiaj po każdej fazie albo zawsze gdy `./gradlew build` zaczyna pluć
-"Could not find ...".
-
-## Tipy
-
-### Plan mode jako bezpiecznik
-
-Każda komenda fazowa wymusza plan mode. **Nie pomijaj.** Czytaj plan,
-ewentualnie odrzuć i poproś o korekty. To 5 minut czytania które uratuje
-30 minut naprawiania złych decyzji.
-
-### Małe chunki
-
-Komendy każą Claude Code pracować chunk-by-chunk i uruchamiać testy między
-nimi. Jeśli widzisz że próbuje zbudować wszystko naraz — przerwij (Esc) i
-poproś o mniejsze kroki.
-
-### Branching
-
-Każda faza na osobnym branchu, każda faza tag-uje wynik:
-```
-feature/phase-1-bootstrap     → phase-1-complete
-feature/phase-2-data-layer    → phase-2-complete
-feature/phase-3-search-chart  → phase-3-complete
-feature/phase-4-indicators    → phase-4-complete
-feature/phase-5-ai-and-polish → phase-5-complete, v1.0.0-mvp
-```
-
-Tag = łatwy rollback gdyby kolejna faza rozwaliła wcześniejszą.
-
-### Long-running session
-
-Fazy 2 i 4 są długie (kilka godzin pracy). Jeśli context window się wypełnia,
-Claude Code samo zasugeruje `/compact`. Jeśli sesja zostaje za długa — `/clear`
-i wystartuj nową, agent przeczyta `CLAUDE.md` od nowa.
-
-### Gdy coś idzie nie tak
-
-- **Build fails po fazie:** uruchom `/verify-deps`. 80% problemów to złe wersje.
-- **Wzorce źle zaimplementowane:** w Fazie 4 jest dedykowany self-defense check.
-  Jeśli nie potrafisz odpowiedzieć na pytania z planu — wróć i popraw.
-- **Vico API się zmieniło:** Faza 3 i 4 mają w Step 1 weryfikację Vico API
-  z WebSearch. Trzymaj się tego co znajdzie, nie tego co pamiętasz.
-
-## Co kiedy się skończy
-
-Po Fazie 5:
-1. **Nie dorzucaj featurów.** Scope zamrożony.
-2. Slajdy do prezentacji.
-3. Nagraj 2-3 min demo (backup gdyby na sali nie było WiFi).
-4. Próbna obrona z kimś — niech pyta z `CLAUDE.md § Patterns to defend`.
-
-## Co robić gdy AI mówi głupotę
-
-Modele LLM (włącznie z Claude) **halucynują numery wersji pakietów** — to
-nie jest "może czasem", to powtarzalny problem. Specjalne zabezpieczenia w
-tym pakiecie:
-
-- `CLAUDE.md § Stack` — eksplicytna instrukcja "weryfikuj przed użyciem"
-- `/phase-1 Step 1` — wymuszona weryfikacja przed plan mode
-- `/verify-deps` — narzędzie do post-hoc audytu
-
-Jeśli mimo to coś przepuści — to nie jest Twoja wina, ale obowiązek poprawienia
-jest Twój. Wklej `./gradlew build 2>&1 | Tee-Object build.log | select -Last 80`
-(PowerShell) albo `tail -80` (bash) i wracaj do mnie / nowej sesji Claude.
-
----
-
-**Powodzenia na obronie.** 🎯
+Razem: ~120 testów jednostkowych + UI Compose tests (`androidTest`).

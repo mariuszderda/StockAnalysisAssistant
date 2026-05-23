@@ -7,12 +7,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import pl.gwsh.stockanalysis.presentation.screens.chart.ChartScreen
+import pl.gwsh.stockanalysis.presentation.screens.chat.ChatScreen
 import pl.gwsh.stockanalysis.presentation.screens.favorites.FavoritesScreen
 import pl.gwsh.stockanalysis.presentation.screens.search.SearchScreen
 
 /**
- * Korzen drzewa nawigacji. Trzy ekrany: wyszukiwarka, ulubione, wykres.
- * Wykres dostaje symbol tickera jako argument trasy.
+ * Korzen drzewa nawigacji. Cztery ekrany: wyszukiwarka, ulubione, wykres,
+ * czat asystenta. Wykres i czat dostaja symbol tickera jako argument trasy.
  */
 @Composable
 fun SaaNavHost(
@@ -38,7 +39,18 @@ fun SaaNavHost(
             route = SaaDestinations.CHART_PATTERN,
             arguments = listOf(navArgument(SaaDestinations.CHART_ARG_SYMBOL) { type = NavType.StringType }),
         ) {
-            ChartScreen(onBack = { navController.popBackStack() })
+            ChartScreen(
+                onBack = { navController.popBackStack() },
+                onAskAssistant = { symbol ->
+                    navController.navigate(SaaDestinations.chatRoute(symbol))
+                },
+            )
+        }
+        composable(
+            route = SaaDestinations.CHAT_PATTERN,
+            arguments = listOf(navArgument(SaaDestinations.CHAT_ARG_SYMBOL) { type = NavType.StringType }),
+        ) {
+            ChatScreen(onBack = { navController.popBackStack() })
         }
     }
 }

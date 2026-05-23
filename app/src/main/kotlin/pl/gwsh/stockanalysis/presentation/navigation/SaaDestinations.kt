@@ -11,7 +11,12 @@ object SaaDestinations {
     const val FAVORITES = "favorites"
     const val CHART_PATTERN = "chart/{symbol}"
     const val CHART_ARG_SYMBOL = "symbol"
+    const val CHAT_PATTERN = "chat/{symbol}"
+    const val CHAT_ARG_SYMBOL = "symbol"
 
     /** Buduje konkretny URL trasy wykresu dla danego tickera. */
     fun chartRoute(symbol: String): String = "chart/$symbol"
+
+    /** Buduje konkretny URL trasy czatu asystenta dla danego tickera. */
+    fun chatRoute(symbol: String): String = "chat/$symbol"
 }

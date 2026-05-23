@@ -34,6 +34,24 @@
     <string name="chart_indicators_sheet_title">Wskaźniki techniczne</string>
     <string name="chart_indicators_disclaimer">Wskaźniki obliczane lokalnie. Nie stanowią porady inwestycyjnej.</string>
 
+    <!-- Ekran: asystent AI -->
+    <string name="chart_ask_assistant">Pytaj asystenta</string>
+    <string name="chat_top_bar_title">%1$s — Asystent</string>
+    <string name="chat_disclaimer_full">To nie jest porada inwestycyjna. Asystent korzysta z modelu językowego AI (Google Gemini) i może popełniać błędy. Decyzje inwestycyjne podejmujesz na własną odpowiedzialność.</string>
+    <string name="chat_loading_context">Wczytywanie danych do analizy…</string>
+    <string name="chat_input_placeholder">Zapytaj o ticker, wskaźniki, trend…</string>
+    <string name="chat_send_cd">Wyślij wiadomość</string>
+    <string name="chat_thinking">Asystent pisze…</string>
+    <string name="chat_suggestion_rsi">Co mówi RSI?</string>
+    <string name="chat_suggestion_trend">Jaki jest krótkoterminowy trend?</string>
+    <string name="chat_suggestion_last_candle">Co oznacza ostatnia świeca?</string>
+    <string name="chat_error_network">Brak połączenia z asystentem AI. Sprawdź internet i spróbuj ponownie.</string>
+    <string name="chat_error_missing_key">Brak klucza API Gemini. Wpisz \'GEMINI_API_KEY\' w pliku local.properties.</string>
+    <string name="chat_error_blocked">Asystent odmówił odpowiedzi (filtr bezpieczeństwa).</string>
+    <string name="chat_error_rate_limit">Przekroczono limit zapytań do asystenta. Spróbuj za chwilę.</string>
+    <string name="chat_error_server">Błąd serwera asystenta (%1$d). Spróbuj ponownie.</string>
+    <string name="chat_error_unknown">Nieoczekiwany błąd podczas rozmowy z asystentem.</string>
+
     <!-- Bledy z DataError -->
     <string name="error_network">Brak połączenia z internetem. Sprawdź sieć.</string>
     <string name="error_rate_limit">Przekroczono limit zapytań do dostawcy danych. Spróbuj za chwilę.</string>

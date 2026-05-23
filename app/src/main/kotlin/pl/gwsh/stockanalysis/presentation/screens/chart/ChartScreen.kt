@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.filled.CandlestickChart
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Refresh
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +59,7 @@ object ChartScreenTags {
     const val ERROR = "chart_error"
     const val FAVORITE_BTN = "chart_favorite_btn"
     const val INDICATORS_BTN = "chart_indicators_btn"
+    const val ASK_ASSISTANT_FAB = "chart_ask_assistant_fab"
     const val RANGE_1M = "chart_range_1m"
     const val RANGE_3M = "chart_range_3m"
     const val RANGE_1Y = "chart_range_1y"
@@ -67,6 +70,7 @@ object ChartScreenTags {
 @Composable
 fun ChartScreen(
     onBack: () -> Unit,
+    onAskAssistant: (String) -> Unit,
     viewModel: ChartViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -79,6 +83,7 @@ fun ChartScreen(
         onRangeChange = viewModel::onRangeChange,
         onTypeChange = viewModel::onChartTypeChange,
         onToggleIndicator = viewModel::onToggleIndicator,
+        onAskAssistant = { onAskAssistant(viewModel.symbol) },
     )
 }
 
@@ -93,6 +98,7 @@ fun ChartContent(
     onRangeChange: (Range) -> Unit,
     onTypeChange: (ChartType) -> Unit,
     onToggleIndicator: (IndicatorSpec) -> Unit,
+    onAskAssistant: () -> Unit = {},
 ) {
     var sheetOpen by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -141,6 +147,21 @@ fun ChartContent(
                 },
             )
         },
+        floatingActionButton = {
+            if (state is ChartUiState.Success) {
+                ExtendedFloatingActionButton(
+                    onClick = onAskAssistant,
+                    icon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Chat,
+                            contentDescription = null,
+                        )
+                    },
+                    text = { Text(stringResource(R.string.chart_ask_assistant)) },
+                    modifier = Modifier.testTag(ChartScreenTags.ASK_ASSISTANT_FAB),
+                )
+            }
+        },
     ) { inner ->
         val overlays = (state as? ChartUiState.Success)
             ?.indicators
@@ -185,6 +206,8 @@ fun ChartContent(
                     )
                 }
             }
+
+            IndicatorLegend(overlays = overlays)
 
             oscillators.forEach { osc ->
                 OscillatorPanel(result = osc)

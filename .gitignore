@@ -34,3 +34,6 @@ hs_err_pid*
 
 # Memory + plans (Claude Code working dirs — should not be in repo)
 .claude/
+
+# Defense notes — osobiste rehearsal notes, nie do repo
+DEFENSE_NOTES.md
