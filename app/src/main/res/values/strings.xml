@@ -1,6 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Stock Analysis Assistant</string>
-    <string name="welcome_title">Stock Analysis Assistant</string>
-    <string name="welcome_subtitle">Faza 1 — szkielet projektu gotowy.</string>
+
+    <!-- Nawigacja -->
+    <string name="nav_search">Szukaj</string>
+    <string name="nav_favorites">Ulubione</string>
+
+    <!-- Ekran: wyszukiwarka -->
+    <string name="search_field_label">Symbol lub nazwa (np. AAPL, CDR.WA)</string>
+    <string name="search_field_placeholder">Wpisz min. 1 znak…</string>
+    <string name="search_clear_cd">Wyczyść zapytanie</string>
+    <string name="search_idle_hint">Wpisz symbol lub nazwę spółki, aby rozpocząć.</string>
+    <string name="search_empty">Brak wyników dla „%1$s”.</string>
+    <string name="search_loading">Szukam…</string>
+
+    <!-- Ekran: ulubione -->
+    <string name="favorites_title">Ulubione tickery</string>
+    <string name="favorites_empty">Brak ulubionych. Dodaj ticker z ekranu wykresu (ikona gwiazdki).</string>
+    <string name="favorites_loading">Wczytywanie…</string>
+
+    <!-- Ekran: wykres -->
+    <string name="chart_back_cd">Wstecz</string>
+    <string name="chart_favorite_add_cd">Dodaj do ulubionych</string>
+    <string name="chart_favorite_remove_cd">Usuń z ulubionych</string>
+    <string name="chart_refresh_cd">Odśwież dane z serwera</string>
+    <string name="chart_loading">Wczytywanie świec…</string>
+    <string name="chart_range_1m">1M</string>
+    <string name="chart_range_3m">3M</string>
+    <string name="chart_range_1y">1R</string>
+    <string name="chart_type_candle">Świece</string>
+    <string name="chart_type_line">Linia</string>
+    <string name="chart_indicators_placeholder">Wskaźniki techniczne — dostępne w Fazie 4.</string>
+
+    <!-- Bledy z DataError -->
+    <string name="error_network">Brak połączenia z internetem. Sprawdź sieć.</string>
+    <string name="error_rate_limit">Przekroczono limit zapytań do dostawcy danych. Spróbuj za chwilę.</string>
+    <string name="error_not_found">Nie znaleziono podanego tickera.</string>
+    <string name="error_server">Błąd serwera (%1$d). Spróbuj ponownie.</string>
+    <string name="error_parse">Nieprawidłowa odpowiedź serwera.</string>
+    <string name="error_unknown">Nieoczekiwany błąd. Spróbuj ponownie.</string>
+    <string name="retry">Spróbuj ponownie</string>
 </resources>

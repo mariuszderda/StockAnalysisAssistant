@@ -106,7 +106,9 @@ dependencies {
 
     // Compose UI
     implementation(libs.bundles.compose.ui)
+    implementation(libs.compose.material.icons.extended)
     debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -114,8 +116,11 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
-    // Navigation (potrzebne od Fazy 3, ale rejestrujemy już teraz w katalogu)
+    // Navigation
     implementation(libs.androidx.navigation.compose)
+
+    // Vico — wykresy (Faza 3 — Compose-M3)
+    implementation(libs.vico.compose.m3)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
@@ -146,4 +151,5 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.turbine)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.compose.ui.test.junit4)
 }
