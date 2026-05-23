@@ -1,13 +1,22 @@
 package pl.gwsh.stockanalysis.di
 
+import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import pl.gwsh.stockanalysis.data.repository.StockRepositoryImpl
+import pl.gwsh.stockanalysis.domain.repository.StockRepository
+import javax.inject.Singleton
 
 /**
- * Stub. W Fazie 2 wiążemy `StockRepository` (interfejs z domain) → `StockRepositoryImpl` (data).
- * To jest punkt egzaminacyjny dla Repository Pattern — patrz CLAUDE.md § "Patterns to defend".
+ * Spina interfejs domenowy ze swoja implementacja (Repository Pattern, ADR-001).
+ * Klasa `abstract`, nie `object`, bo `@Binds` wymaga abstract method.
  */
 @Module
 @InstallIn(SingletonComponent::class)
-object RepositoryModule
+abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindStockRepository(impl: StockRepositoryImpl): StockRepository
+}

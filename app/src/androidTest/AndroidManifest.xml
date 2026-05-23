@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nadpisuje android:name z gowniego manifestu, zeby instrumented testy DAO
+     nie odpalaly grafu Hilta (testy konstruuja Room.inMemoryDatabaseBuilder bezposrednio).
+     Bez tego HiltAndroidApp probowalby zainicjalizowac SingletonComponent przy starcie. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:name="android.app.Application"
+        tools:replace="android:name" />
+
+</manifest>

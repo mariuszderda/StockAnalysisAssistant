@@ -121,11 +121,29 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
-    // Test — JUnit 5 + Truth + MockK + Turbine + coroutines-test
+    // Retrofit + OkHttp + Moshi (Twelve Data API)
+    implementation(libs.bundles.retrofit)
+    ksp(libs.moshi.kotlin.codegen)
+
+    // Room (cache OHLC + ulubione)
+    implementation(libs.bundles.room)
+    ksp(libs.room.compiler)
+
+    // Test — JUnit 5 + Truth + MockK + Turbine + coroutines-test + MockWebServer
     testImplementation(libs.bundles.junit5)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.truth)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
+
+    // AndroidTest (instrumented) — Room in-memory DAO tests
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.turbine)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }
