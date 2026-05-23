@@ -8,10 +8,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.CandlestickChart
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -20,15 +23,19 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -36,7 +43,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import pl.gwsh.stockanalysis.R
+import pl.gwsh.stockanalysis.domain.indicator.IndicatorResult
+import pl.gwsh.stockanalysis.domain.indicator.IndicatorSpec
+import pl.gwsh.stockanalysis.domain.indicator.IndicatorType
 import pl.gwsh.stockanalysis.domain.model.Range
 import pl.gwsh.stockanalysis.presentation.common.toUserMessage
 
@@ -45,6 +56,7 @@ object ChartScreenTags {
     const val LOADING = "chart_loading"
     const val ERROR = "chart_error"
     const val FAVORITE_BTN = "chart_favorite_btn"
+    const val INDICATORS_BTN = "chart_indicators_btn"
     const val RANGE_1M = "chart_range_1m"
     const val RANGE_3M = "chart_range_3m"
     const val RANGE_1Y = "chart_range_1y"
@@ -60,11 +72,13 @@ fun ChartScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     ChartContent(
         state = state,
+        availableIndicators = viewModel.availableIndicators,
         onBack = onBack,
         onRefresh = viewModel::onRefresh,
         onToggleFavorite = viewModel::onToggleFavorite,
         onRangeChange = viewModel::onRangeChange,
         onTypeChange = viewModel::onChartTypeChange,
+        onToggleIndicator = viewModel::onToggleIndicator,
     )
 }
 
@@ -72,12 +86,18 @@ fun ChartScreen(
 @Composable
 fun ChartContent(
     state: ChartUiState,
+    availableIndicators: List<IndicatorSpec>,
     onBack: () -> Unit,
     onRefresh: () -> Unit,
     onToggleFavorite: () -> Unit,
     onRangeChange: (Range) -> Unit,
     onTypeChange: (ChartType) -> Unit,
+    onToggleIndicator: (IndicatorSpec) -> Unit,
 ) {
+    var sheetOpen by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -91,6 +111,15 @@ fun ChartContent(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { sheetOpen = true },
+                        modifier = Modifier.testTag(ChartScreenTags.INDICATORS_BTN),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Insights,
+                            contentDescription = stringResource(R.string.chart_indicators_open_cd),
+                        )
+                    }
                     IconButton(onClick = onRefresh) {
                         Icon(
                             imageVector = Icons.Filled.Refresh,
@@ -113,7 +142,24 @@ fun ChartContent(
             )
         },
     ) { inner ->
-        Column(modifier = Modifier.fillMaxSize().padding(inner).padding(horizontal = 16.dp)) {
+        val overlays = (state as? ChartUiState.Success)
+            ?.indicators
+            ?.filter { it.type == IndicatorType.OVERLAY }
+            ?.filterIsInstance<IndicatorResult.SingleLine>()
+            .orEmpty()
+
+        val oscillators = (state as? ChartUiState.Success)
+            ?.indicators
+            ?.filter { it.type == IndicatorType.OSCILLATOR }
+            .orEmpty()
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(inner)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
+        ) {
             ChartControls(
                 range = state.range,
                 chartType = state.chartType,
@@ -134,13 +180,28 @@ fun ChartContent(
                     is ChartUiState.Success -> VicoChart(
                         candles = s.candles,
                         type = s.chartType,
+                        overlays = overlays,
                         modifier = Modifier.testTag(ChartScreenTags.CHART),
                     )
                 }
             }
 
-            IndicatorPanel(modifier = Modifier.padding(top = 12.dp))
+            oscillators.forEach { osc ->
+                OscillatorPanel(result = osc)
+            }
         }
+    }
+
+    if (sheetOpen) {
+        IndicatorPanel(
+            available = availableIndicators,
+            activeSpecs = state.activeSpecs,
+            sheetState = sheetState,
+            onDismiss = { sheetOpen = false },
+            onToggle = { spec ->
+                onToggleIndicator(spec)
+            },
+        )
     }
 }
 

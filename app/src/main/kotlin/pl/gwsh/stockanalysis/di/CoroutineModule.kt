@@ -22,6 +22,10 @@ object CoroutineModule {
     fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 
     @Provides
+    @DefaultDispatcher
+    fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+
+    @Provides
     @Singleton
     fun provideClock(): Clock = Clock.systemUTC()
 }

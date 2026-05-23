@@ -30,7 +30,9 @@
     <string name="chart_range_1y">1R</string>
     <string name="chart_type_candle">Świece</string>
     <string name="chart_type_line">Linia</string>
-    <string name="chart_indicators_placeholder">Wskaźniki techniczne — dostępne w Fazie 4.</string>
+    <string name="chart_indicators_open_cd">Otwórz panel wskaźników</string>
+    <string name="chart_indicators_sheet_title">Wskaźniki techniczne</string>
+    <string name="chart_indicators_disclaimer">Wskaźniki obliczane lokalnie. Nie stanowią porady inwestycyjnej.</string>
 
     <!-- Bledy z DataError -->
     <string name="error_network">Brak połączenia z internetem. Sprawdź sieć.</string>

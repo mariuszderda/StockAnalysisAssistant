@@ -16,24 +16,29 @@ import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.candlestickSeries
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
+import pl.gwsh.stockanalysis.domain.indicator.IndicatorResult
 import pl.gwsh.stockanalysis.domain.model.Candle
 
 /**
- * Wykres Vico — swiece lub linia close, w zaleznosci od [type].
- * Re-uploaduje dane do model-producera kiedy zmieni sie [candles] lub [type].
+ * Wykres Vico — swiece lub linia close, w zaleznosci od [type]. Opcjonalnie
+ * nakladamy serie overlay (SMA, EMA — kazda jako linia o wlasnym kolorze).
  *
- * Vico 2.1.2 — patrz `docs/ADR/004-strategy-factory.md` nie ma na ten temat;
- * to wybor warstwy prezentacji.
+ * Re-uploaduje dane do model-producera kiedy zmieni sie [candles], [type] albo
+ * zestaw [overlays] (porownywany po referencjach listy).
+ *
+ * Vico 2.1.2: `Double.NaN` w `lineSeries` powoduje przerwy w linii — uzywamy
+ * tego, zeby nie pomijac indeksow X dla wskaznikow z leading nullami.
  */
 @Composable
 fun VicoChart(
     candles: List<Candle>,
     type: ChartType,
+    overlays: List<IndicatorResult.SingleLine> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
 
-    LaunchedEffect(candles, type) {
+    LaunchedEffect(candles, type, overlays) {
         if (candles.isEmpty()) return@LaunchedEffect
         modelProducer.runTransaction {
             when (type) {
@@ -48,20 +53,49 @@ fun VicoChart(
                     series(y = candles.map { it.close })
                 }
             }
+            if (overlays.isNotEmpty()) {
+                lineSeries {
+                    overlays.forEach { ov ->
+                        series(y = ov.values.map { it ?: Double.NaN })
+                    }
+                }
+            }
         }
     }
 
+    val candlestickLayer = rememberCandlestickCartesianLayer()
+    val priceLineLayer = rememberLineCartesianLayer()
+    val overlayLineLayer = rememberLineCartesianLayer()
+
     val chart = when (type) {
-        ChartType.CANDLE -> rememberCartesianChart(
-            rememberCandlestickCartesianLayer(),
-            startAxis = VerticalAxis.rememberStart(),
-            bottomAxis = HorizontalAxis.rememberBottom(),
-        )
-        ChartType.LINE -> rememberCartesianChart(
-            rememberLineCartesianLayer(),
-            startAxis = VerticalAxis.rememberStart(),
-            bottomAxis = HorizontalAxis.rememberBottom(),
-        )
+        ChartType.CANDLE -> if (overlays.isEmpty()) {
+            rememberCartesianChart(
+                candlestickLayer,
+                startAxis = VerticalAxis.rememberStart(),
+                bottomAxis = HorizontalAxis.rememberBottom(),
+            )
+        } else {
+            rememberCartesianChart(
+                candlestickLayer,
+                overlayLineLayer,
+                startAxis = VerticalAxis.rememberStart(),
+                bottomAxis = HorizontalAxis.rememberBottom(),
+            )
+        }
+        ChartType.LINE -> if (overlays.isEmpty()) {
+            rememberCartesianChart(
+                priceLineLayer,
+                startAxis = VerticalAxis.rememberStart(),
+                bottomAxis = HorizontalAxis.rememberBottom(),
+            )
+        } else {
+            rememberCartesianChart(
+                priceLineLayer,
+                overlayLineLayer,
+                startAxis = VerticalAxis.rememberStart(),
+                bottomAxis = HorizontalAxis.rememberBottom(),
+            )
+        }
     }
 
     CartesianChartHost(
