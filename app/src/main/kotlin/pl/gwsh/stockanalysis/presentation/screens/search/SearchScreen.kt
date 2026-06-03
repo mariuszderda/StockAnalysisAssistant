@@ -123,7 +123,7 @@ private fun SearchResultsList(items: List<Stock>, onClick: (String) -> Unit) {
             .testTag(SearchScreenTags.LIST),
         contentPadding = PaddingValues(vertical = 8.dp),
     ) {
-        items(items, key = { it.symbol }) { stock ->
+        items(items, key = { "${it.symbol}|${it.micCode}" }) { stock ->
             StockRow(stock = stock, onClick = { onClick(stock.symbol) })
             HorizontalDivider()
         }

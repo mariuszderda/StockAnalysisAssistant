@@ -60,7 +60,12 @@ fun OscillatorPanel(
             modelProducer.runTransaction {
                 lineSeries {
                     series.forEach { line ->
-                        series(y = line.map { it ?: Double.NaN })
+                        val pairs = line.withIndex()
+                            .filter { (_, v) -> v != null }
+                            .map { (i, v) -> i to v!! }
+                        if (pairs.isNotEmpty()) {
+                            series(x = pairs.map { it.first }, y = pairs.map { it.second })
+                        }
                     }
                 }
             }

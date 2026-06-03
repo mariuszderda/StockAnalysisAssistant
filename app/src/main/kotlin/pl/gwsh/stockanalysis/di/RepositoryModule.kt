@@ -1,7 +1,7 @@
 package pl.gwsh.stockanalysis.di
 
-import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import pl.gwsh.stockanalysis.data.repository.StockRepositoryImpl
@@ -14,9 +14,9 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
+object RepositoryModule {
 
-    @Binds
+    @Provides
     @Singleton
-    abstract fun bindStockRepository(impl: StockRepositoryImpl): StockRepository
+    fun provideStockRepository(impl: StockRepositoryImpl): StockRepository = impl
 }

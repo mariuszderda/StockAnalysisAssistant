@@ -1,5 +1,7 @@
 package pl.gwsh.stockanalysis.di
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,6 +27,7 @@ object CoroutineModule {
     @DefaultDispatcher
     fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
 
+    @RequiresApi(Build.VERSION_CODES.O)
     @Provides
     @Singleton
     fun provideClock(): Clock = Clock.systemUTC()

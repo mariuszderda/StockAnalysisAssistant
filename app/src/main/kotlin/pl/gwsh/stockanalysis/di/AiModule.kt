@@ -1,7 +1,6 @@
 package pl.gwsh.stockanalysis.di
 
 import com.squareup.moshi.Moshi
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,14 +44,14 @@ object AiModule {
 }
 
 /**
- * `@Binds` wymaga abstract module — trzymamy osobno, zeby AiModule
- * pozostalo `object` z `@Provides`.
+ * Utrzymujemy osobny moduł tylko dla wiązania interfejsu z implementacją.
+ * `@Provides` omija problem KSP/Hilt z walidacją `@Binds` dla tego projektu.
  */
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class AiBindingsModule {
+object AiBindingsModule {
 
-    @Binds
+    @Provides
     @Singleton
-    abstract fun bindGeminiClient(impl: GeminiClientImpl): GeminiClient
+    fun provideGeminiClient(impl: GeminiClientImpl): GeminiClient = impl
 }

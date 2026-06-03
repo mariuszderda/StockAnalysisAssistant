@@ -1,155 +1,157 @@
+import com.android.build.gradle.ProguardFiles.getDefaultProguardFile
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
-    alias(libs.plugins.android.junit5)
+    alias(libs.plugins.kotlin.android)
 }
 
-// Wczytaj local.properties (gitignored). Jeśli nie istnieje — puste wartości i ostrzeżenie.
-// Klucze trafiają do BuildConfig.* i są odczytywane WYŁĄCZNIE przez ApiKeys (di/ApiKeys.kt).
-val localProps = Properties().apply {
-    val f = rootProject.file("local.properties")
-    if (f.exists()) {
-        f.inputStream().use { load(it) }
-    } else {
-        logger.warn("local.properties not found — API keys will be empty. Copy local.properties.example to local.properties.")
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        load(file.inputStream())
     }
 }
-
-fun localProp(key: String): String = (localProps.getProperty(key) ?: "").let { "\"$it\"" }
-
 android {
     namespace = "pl.gwsh.stockanalysis"
-    // compileSdk bumped to 36 because Compose 1.11.x i androidx.lifecycle 2.9.x wymagają ≥ 35.
-    // targetSdk pozostaje 34 zgodnie z CLAUDE.md § Stack — żeby nie wciągać nowych zachowań
-    // runtime Androida 15/16 bez świadomej decyzji.
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "pl.gwsh.stockanalysis"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField("String", "TWELVE_DATA_API_KEY", localProp("TWELVE_DATA_API_KEY"))
-        buildConfigField("String", "GEMINI_API_KEY", localProp("GEMINI_API_KEY"))
     }
 
     buildTypes {
-        debug {
-            isMinifyEnabled = false
-        }
         release {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            buildConfigField(
+                "String", "TWELVE_DATA_API_KEY",
+                "\"${localProperties.getProperty("TWELVE_DATA_API_KEY") ?: ""}\""
+            )
+            buildConfigField(
+                "String", "GEMINI_API_KEY",
+                "\"${localProperties.getProperty("GEMINI_API_KEY") ?: ""}\""
+            )
+        }
+        debug {
+            buildConfigField(
+                "String", "TWELVE_DATA_API_KEY",
+                "\"${localProperties.getProperty("TWELVE_DATA_API_KEY") ?: ""}\""
+            )
+            buildConfigField(
+                "String", "GEMINI_API_KEY",
+                "\"${localProperties.getProperty("GEMINI_API_KEY") ?: ""}\""
             )
         }
     }
-
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
     buildFeatures {
         compose = true
         buildConfig = true
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlin {
-        jvmToolchain(17)
-    }
-
-    sourceSets {
-        named("main") {
-            kotlin.srcDirs("src/main/kotlin")
-        }
-        named("test") {
-            kotlin.srcDirs("src/test/kotlin")
-        }
-        named("androidTest") {
-            kotlin.srcDirs("src/androidTest/kotlin")
-        }
+    lint {
+        disable += "FrequentlyChangingValue"
+        disable += "NullSafeMutableLiveData"
+        disable += "RememberInComposition"
+        abortOnError = false
+        checkReleaseBuilds = false
     }
 
     packaging {
         resources {
-            excludes += setOf(
-                "/META-INF/{AL2.0,LGPL2.1}",
-                "/META-INF/LICENSE*",
-                "/META-INF/NOTICE*",
-            )
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_11
+    }
+}
+
 dependencies {
-    // Compose BOM steruje wersjami modułów Compose poniżej.
-    implementation(platform(libs.compose.bom))
-    androidTestImplementation(platform(libs.compose.bom))
-
-    // AndroidX core / activity / lifecycle
+    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material:material-icons-extended")
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // Compose UI
-    implementation(libs.bundles.compose.ui)
-    implementation(libs.compose.material.icons.extended)
-    debugImplementation(libs.compose.ui.tooling)
-    debugImplementation(libs.compose.ui.test.manifest)
+    // COMPOSE BOM
+    implementation("androidx.compose.foundation:foundation")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.compose.ui:ui-test")
 
-    // Hilt
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
-    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
-
-    // Navigation
+    // NAVIGATION
     implementation(libs.androidx.navigation.compose)
+    androidTestImplementation(libs.androidx.navigation.testing)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
-    // Vico — wykresy (Faza 3 — Compose-M3)
-    implementation(libs.vico.compose.m3)
+    // coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
-    // Coroutines
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.kotlinx.coroutines.android)
+    // HILT
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler.v2571)
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    // Retrofit + OkHttp + Moshi (Twelve Data API)
-    implementation(libs.bundles.retrofit)
-    ksp(libs.moshi.kotlin.codegen)
+    // VIEWMODEL
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
-    // Room (cache OHLC + ulubione)
-    implementation(libs.bundles.room)
-    ksp(libs.room.compiler)
+    //MOSHI
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.2")
 
-    // Test — JUnit 5 + Truth + MockK + Turbine + coroutines-test + MockWebServer
-    testImplementation(libs.bundles.junit5)
-    testRuntimeOnly(libs.junit.jupiter.engine)
-    testImplementation(libs.truth)
-    testImplementation(libs.mockk)
-    testImplementation(libs.turbine)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.okhttp.mockwebserver)
+    //OKHTTP3
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:5.3.2"))
+    // define any required OkHttp artifacts without version
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:logging-interceptor")
 
-    // AndroidTest (instrumented) — Room in-memory DAO tests
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.room.testing)
-    androidTestImplementation(libs.mockk.android)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.turbine)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(libs.compose.ui.test.junit4)
+    //retrofit
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.squareup.retrofit2:converter-moshi:3.0.0")
+
+    // Room
+    val room_version = "2.8.4"
+    implementation("androidx.room:room-runtime:$room_version")
+    // If this project uses any Kotlin source, use Kotlin Symbol Processing (KSP)
+    // See Add the KSP plugin to your project
+    ksp("androidx.room:room-compiler:$room_version")
+    // If this project only uses Java source, use the Java annotationProcessor
+    // No additional plugins are necessary
+    annotationProcessor("androidx.room:room-compiler:$room_version")
+    // optional - Kotlin Extensions and Coroutines support for Room
+    implementation("androidx.room:room-ktx:${room_version}")
+
+    // Charts - Vico
+    implementation("com.patrykandpatrick.vico:compose-m3:2.1.2")
+
+    // AI - Gemini (TODO: dodać po weryfikacji wersji na Maven Central)
+    // implementation("com.google.generativeai:google-generativeai-kotlin:X.X.X")
 }

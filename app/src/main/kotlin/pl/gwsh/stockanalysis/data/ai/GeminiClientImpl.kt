@@ -68,6 +68,6 @@ class GeminiClientImpl @Inject constructor(
     }
 }
 
-private const val MODEL = "gemini-1.5-flash"
+private const val MODEL = "gemini-2.5-flash"
 private const val TEMPERATURE = 0.6
 private const val MAX_OUTPUT_TOKENS = 800
